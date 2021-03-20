@@ -82,7 +82,7 @@ class LoopTransformer(ast.NodeTransformer):
         """Creates an executable function that will be called for each iteration in the
         for-loop."""
         function_tree = self.visit(ast.parse(self.source))
-        print(ast.unparse(function_tree))
+        # print(ast.unparse(function_tree))
         # print(ast.dump(function_tree, indent=4))
 
         function_name = function_tree.body[0].name
@@ -131,7 +131,7 @@ class LoopTransformer(ast.NodeTransformer):
                         "You cannot assign to multiple paraloop Variables in a single statement. "
                         "Try assigning one at a time."
                     )
-            return node
+            return self.generic_visit(node)
 
         if node.targets[0].id in self.variable_names:
             new_node = ast.Expr(
@@ -148,12 +148,16 @@ class LoopTransformer(ast.NodeTransformer):
             ast.fix_missing_locations(new_node)
             return new_node
 
-    # def visit_AnnAssign(self, node: AnnAssign) -> Any:
-    #     return super().visit_AnnAssign(node)
+    def visit_AnnAssign(self, node: ast.AnnAssign):
+        if node.target.id in self.variable_names:
+            raise TypeError(
+                "Your loop contains an annotated assign to a paraloop Variable "
+                f"on line {node.lineno - 1}, that is not supported!"
+            )
+        return self.generic_visit(node)
 
     def visit_AugAssign(self, node: ast.AugAssign):
         if node.target.id in self.variable_names:
-
             new_node = ast.Expr(
                 ast.Call(
                     func=ast.Attribute(
