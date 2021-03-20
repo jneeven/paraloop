@@ -3,52 +3,9 @@ import itertools
 from multiprocessing import Process, Queue
 from typing import Callable, Dict, Iterable, Optional, Sequence
 
+import paraloop.worker as worker
 from paraloop.syntax import LoopFinder, LoopTransformer
 from paraloop.variable import Variable
-
-
-class Finished:
-    """Used to signal the workers that there is no more work to be done."""
-
-    pass
-
-
-class Worker:
-    def __init__(
-        self,
-        function: Callable,
-        in_queue: Queue,
-        out_queue: Queue,
-        variables: Dict,
-        id: int,
-    ):
-        self.function = function
-        self.in_queue = in_queue
-        self.out_queue = out_queue
-        self.variables = variables
-        self.id = id
-
-        self.done = False
-
-    def start(self):
-        while not self.done:
-            # TODO: we probably want to cache a few items at a time so we don't need to
-            # wait for the queue lock.
-            index, args = self.in_queue.get()
-            if args is Finished:
-                self.out_queue.put(self.variables)
-                self.done = True
-                return
-
-            if isinstance(args, (list, tuple)):
-                self.function(*args)
-            else:
-                self.function(args)
-
-
-def create_worker(*args, **kwargs):
-    worker = Worker(*args, **kwargs)
-    worker.start()
 
 
 class ParaLoop:
@@ -93,7 +50,7 @@ class ParaLoop:
         processes = []
         for i in range(self.num_processes):
             process = Process(
-                target=create_worker,
+                target=worker.create_worker,
                 args=(function, in_queue, out_queue, variables, i),
                 name=f"worker_{i}",
             )
@@ -108,7 +65,7 @@ class ParaLoop:
 
         # Signal them to stop once there are no more values to iterate over
         for _ in processes:
-            in_queue.put((0, Finished))
+            in_queue.put((0, worker.Finished))
 
         return processes, out_queue
 
