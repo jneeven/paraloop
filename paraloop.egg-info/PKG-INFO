@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: paraloop
+Version: 0.0.1
+Summary: Simple Python for-loop parallelization
+Home-page: UNKNOWN
+Author: Jelmer Neeven
+Author-email: jelmer@plumerai.com
+License: MIT
+Description: UNKNOWN
+Keywords: for loop parallel multiprocess python
+Platform: Linux
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Description-Content-Type: text/markdown
+Provides-Extra: dev

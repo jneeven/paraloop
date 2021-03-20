@@ -1,0 +1,13 @@
+README.md
+setup.cfg
+setup.py
+paraloop/__init__.py
+paraloop/checker.py
+paraloop/paraloop.py
+paraloop/syntax.py
+paraloop/variable.py
+paraloop.egg-info/PKG-INFO
+paraloop.egg-info/SOURCES.txt
+paraloop.egg-info/dependency_links.txt
+paraloop.egg-info/requires.txt
+paraloop.egg-info/top_level.txt
