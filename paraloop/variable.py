@@ -1,5 +1,7 @@
 from typing import Any
 
+from paraloop.aggregation_strategies import AggregationStrategy
+
 operators = [
     "__abs__",
     "__add__",
@@ -80,11 +82,17 @@ class Variable:
     """Wraps any kind of variable and specifies how to aggregate it over the different
     processes."""
 
-    __paraloop_attributes__ = set(["wrapped", "type", "assign", "__repr__"])
+    __paraloop_attributes__ = set(
+        ["wrapped", "type", "aggregation_strategy", "assign", "__repr__"]
+    )
 
-    def __init__(self, wrapped: Any) -> None:
+    def __init__(self, wrapped: Any, aggregation_strategy: AggregationStrategy) -> None:
         self.wrapped = wrapped
         self.type = type(wrapped)
+        self.aggregation_strategy = aggregation_strategy
+
+        if not self.aggregation_strategy.is_compatible(self.wrapped):
+            raise TypeError()  # TODO
 
     def assign(self, value: Any):
         # We don't support assigning values of a different type, unless both the wrapped

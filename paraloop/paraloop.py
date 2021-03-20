@@ -1,15 +1,66 @@
 import inspect
+import itertools
+from multiprocessing import Process, Queue
+from typing import Callable, Dict, Iterable, Optional
 
 from paraloop.syntax import LoopFinder, LoopTransformer
+from paraloop.variable import Variable
+
+
+class Finished:
+    """Used to signal the workers that there is no more work to be done."""
+
+    pass
+
+
+class Worker:
+    def __init__(
+        self,
+        function: Callable,
+        in_queue: Queue,
+        out_queue: Queue,
+        variables: Dict,
+        id: int,
+    ):
+        self.function = function
+        self.in_queue = in_queue
+        self.out_queue = out_queue
+        self.variables = variables
+        self.id = id
+
+        self.done = False
+
+    def start(self):
+        while not self.done:
+            # TODO: we probably want to cache a few items at a time so we don't need to
+            # wait for the queue lock.
+            index, args = self.in_queue.get()
+            if args is Finished:
+                self.out_queue.put(self.variables)
+                self.done = True
+                return
+
+            if isinstance(args, (list, tuple)):
+                self.function(*args)
+            else:
+                self.function(args)
+
+
+def create_worker(*args, **kwargs):
+    worker = Worker(*args, **kwargs)
+    worker.start()
 
 
 class ParaLoop:
     """Wraps an iterable and executes its iterations in parallel over multiple
     processes."""
 
-    def __init__(self, iterable, length=None):
+    def __init__(
+        self, iterable: Iterable, length: Optional[int] = None, num_processes: int = 4
+    ):
         self.iterable = iter(iterable)
         self.length = length or len(iterable)
+        self.num_processes = num_processes
         self.index = 0
 
     def __iter__(self):
@@ -20,11 +71,58 @@ class ParaLoop:
             loop_source, caller.frame.f_globals, caller.frame.f_locals
         ).build_loop_function()
 
-        function(3)
+        # Keep track of the Variables that need to be aggregated properly
+        variables = {
+            key: value
+            for key, value in itertools.chain(
+                caller.frame.f_locals.items(), caller.frame.f_globals.items()
+            )
+            if isinstance(value, Variable)
+        }
 
-        # TODO: perform initialization of the processes
+        # Spawn process and distribute the work
+        processes, result_queue = self._distribute_work(function, variables)
+
+        # Wait for the results
+        results = []
+        for _ in processes:
+            # TODO: add a timeout here in case one of the workers has crashed.
+            results.append(result_queue.get(block=True))
+
+        print(results)
+
+        for name, variable in variables.items():
+            aggregated = variable.aggregation_strategy.aggregate(
+                [result[name] for result in results]
+            )
+            variable.assign(aggregated)
+
         return self
 
+    def _distribute_work(self, function, variables):
+        # Create queues to communicate with workers and spawn worker processes
+        in_queue, out_queue = (Queue(), Queue())
+        processes = []
+        for i in range(self.num_processes):
+            process = Process(
+                target=create_worker,
+                args=(function, in_queue, out_queue, variables, i),
+                name=f"worker_{i}",
+            )
+            processes.append(process)
+            process.start()
+
+        # Distribute the work over the workers
+        for i, x in enumerate(self.iterable):
+            in_queue.put((i, x))
+
+        # Signal them to stop once there are no more values to iterate over
+        for _ in processes:
+            in_queue.put((0, Finished))
+
+        return processes, out_queue
+
     def __next__(self):
-        # return next(self.iterable)
+        # We already looped over the iterable ourselves, so we don't need to loop
+        # over the original.
         raise StopIteration
