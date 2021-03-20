@@ -3,9 +3,8 @@ from paraloop.aggregation_strategies import Sum
 
 
 def main():
-    a = Variable(0.0, aggregation_strategy=Sum)
+    a = Variable(5.0, aggregation_strategy=Sum)
     c = []
-    print(int())
 
     for n in ParaLoop(list(range(10))):
         a += 3

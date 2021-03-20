@@ -1,7 +1,7 @@
 import inspect
 import itertools
 from multiprocessing import Process, Queue
-from typing import Callable, Dict, Iterable, Optional
+from typing import Callable, Dict, Iterable, Optional, Sequence
 
 from paraloop.syntax import LoopFinder, LoopTransformer
 from paraloop.variable import Variable
@@ -56,10 +56,11 @@ class ParaLoop:
     processes."""
 
     def __init__(
-        self, iterable: Iterable, length: Optional[int] = None, num_processes: int = 4
+        self, iterable: Iterable, length: Optional[int] = None, num_processes: int = 8
     ):
         self.iterable = iter(iterable)
         self.length = length or len(iterable)
+        # TODO: add auto mode where we take num cores - 1.
         self.num_processes = num_processes
         self.index = 0
 
@@ -82,24 +83,11 @@ class ParaLoop:
 
         # Spawn process and distribute the work
         processes, result_queue = self._distribute_work(function, variables)
-
-        # Wait for the results
-        results = []
-        for _ in processes:
-            # TODO: add a timeout here in case one of the workers has crashed.
-            results.append(result_queue.get(block=True))
-
-        print(results)
-
-        for name, variable in variables.items():
-            aggregated = variable.aggregation_strategy.aggregate(
-                [result[name] for result in results]
-            )
-            variable.assign(aggregated)
-
+        # Wait for the results and aggregate them
+        self._process_results(processes, result_queue, variables)
         return self
 
-    def _distribute_work(self, function, variables):
+    def _distribute_work(self, function: Callable, variables: Dict):
         # Create queues to communicate with workers and spawn worker processes
         in_queue, out_queue = (Queue(), Queue())
         processes = []
@@ -114,6 +102,8 @@ class ParaLoop:
 
         # Distribute the work over the workers
         for i, x in enumerate(self.iterable):
+            # TODO: after a certain amount, check how many jobs have been completed so
+            # we can display a progress bar.
             in_queue.put((i, x))
 
         # Signal them to stop once there are no more values to iterate over
@@ -121,6 +111,23 @@ class ParaLoop:
             in_queue.put((0, Finished))
 
         return processes, out_queue
+
+    def _process_results(
+        self, processes: Sequence[Process], result_queue: Queue, variables: Dict
+    ):
+        # Wait for the results
+        results = []
+        for _ in processes:
+            # TODO: add a timeout here in case one of the workers has crashed.
+            results.append(result_queue.get(block=True))
+
+        print(results)
+
+        for name, variable in variables.items():
+            aggregated = variable.aggregation_strategy.aggregate(
+                variable.wrapped, [result[name] for result in results]
+            )
+            variable.assign(aggregated)
 
     def __next__(self):
         # We already looped over the iterable ourselves, so we don't need to loop
