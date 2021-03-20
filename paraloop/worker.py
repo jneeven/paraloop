@@ -27,18 +27,23 @@ class Worker:
 
     def start(self):
         while not self.done:
-            # TODO: we probably want to cache a few items at a time so we don't need to
-            # wait for the queue lock.
-            index, args = self.in_queue.get()
-            if args is Finished:
-                self.out_queue.put(self.variables)
-                self.done = True
-                return
+            try:
+                # TODO: we probably want to cache a few items at a time so we don't need to
+                # wait for the queue lock.
+                index, args = self.in_queue.get()
+                if args is Finished:
+                    self.out_queue.put(self.variables)
+                    self.done = True
+                    return
 
-            if isinstance(args, (list, tuple)):
-                self.function(*args)
-            else:
-                self.function(args)
+                if isinstance(args, (list, tuple)):
+                    self.function(*args)
+                else:
+                    self.function(args)
+            except Exception as e:
+                # Pass exception on to the master process.
+                self.out_queue.put(e)
+                return
 
 
 def create_worker(*args, **kwargs):

@@ -76,7 +76,12 @@ class ParaLoop:
         results = []
         for _ in processes:
             # TODO: add a timeout here in case one of the workers has crashed.
-            results.append(result_queue.get(block=True))
+            result = result_queue.get(block=True)
+            if isinstance(result, Exception):
+                print("An error has occured in one of the workers!")
+                raise result
+
+            results.append()
 
         print(results)
 

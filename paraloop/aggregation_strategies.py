@@ -21,3 +21,9 @@ class Sum(AggregationStrategy):
         if isinstance(object, dict):
             return False
         return True
+
+
+"""
+TODO:
+- implement append (for sequences), merge (for collections) and average (for numbers and sequences thereof)
+"""
