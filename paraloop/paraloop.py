@@ -20,8 +20,7 @@ class ParaLoop:
             loop_source, caller.frame.f_globals, caller.frame.f_locals
         ).build_loop_function()
 
-        function(1)
-        function(2)
+        function(3)
 
         # TODO: perform initialization of the processes
         return self

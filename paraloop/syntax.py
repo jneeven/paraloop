@@ -82,6 +82,9 @@ class LoopTransformer(ast.NodeTransformer):
         """Creates an executable function that will be called for each iteration in the
         for-loop."""
         function_tree = self.visit(ast.parse(self.source))
+        print(ast.unparse(function_tree))
+        # print(ast.dump(function_tree, indent=4))
+
         function_name = function_tree.body[0].name
         assert function_name not in self.scope
 
@@ -120,11 +123,53 @@ class LoopTransformer(ast.NodeTransformer):
         ast.fix_missing_locations(new_node)
         return self.generic_visit(new_node)
 
-    # def visit_Assign(self, node: ast.Assign) -> Any:
-    #     return super().visit_Assign(node)
+    def visit_Assign(self, node: ast.Assign):
+        if len(node.targets) > 1:
+            for target in node.targets:
+                if target.id in self.variable_names:
+                    raise TypeError(
+                        "You cannot assign to multiple paraloop Variables in a single statement. "
+                        "Try assigning one at a time."
+                    )
+            return node
+
+        if node.targets[0].id in self.variable_names:
+            new_node = ast.Expr(
+                ast.Call(
+                    func=ast.Attribute(
+                        ast.Name(id=node.targets[0].id, ctx=ast.Load()),
+                        "assign",
+                        ast.Load(),
+                    ),
+                    args=[node.value],
+                    keywords=[],
+                ),
+            )
+            ast.fix_missing_locations(new_node)
+            return new_node
 
     # def visit_AnnAssign(self, node: AnnAssign) -> Any:
     #     return super().visit_AnnAssign(node)
 
-    # def visit_AugAssign(self, node: ast.AugAssign) -> Any:
-    #     return super().visit_AugAssign(node)
+    def visit_AugAssign(self, node: ast.AugAssign):
+        if node.target.id in self.variable_names:
+
+            new_node = ast.Expr(
+                ast.Call(
+                    func=ast.Attribute(
+                        ast.Name(id=node.target.id, ctx=ast.Load()),
+                        "assign",
+                        ast.Load(),
+                    ),
+                    args=[
+                        ast.BinOp(
+                            left=ast.Name(id=node.target.id, ctx=ast.Load()),
+                            op=node.op,
+                            right=node.value,
+                        )
+                    ],
+                    keywords=[],
+                ),
+            )
+            ast.fix_missing_locations(new_node)
+            return new_node

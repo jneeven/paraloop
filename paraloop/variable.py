@@ -11,11 +11,8 @@ operators = [
     "__float__",
     "__floor__",
     "__floordiv__",
-    "__format__",
     "__ge__",
     "__gt__",
-    "__iadd__",
-    "__imul__",
     "__int__",
     "__invert__",
     "__le__",
@@ -57,14 +54,24 @@ def wrap_operators(cls):
     This is necessary because these methods must be registered on the class, not on the
     instance, for operator overloading to work.
     """
+
+    def create_function(operator):
+        def wrap_operator(self, other):
+            """Call the operator function on the wrapped variable.
+
+            If it returns NotImplemented, we have to try the operator the other way
+            around. Normally Python takes care of this, but we need to ensure that it
+            passes the wrapped variable rather than the wrapping paraloop.Variable.
+            """
+            new_value = getattr(self.wrapped, operator)(other)
+            if new_value is NotImplemented:
+                new_value = getattr(other, operator)(self.wrapped)
+            return new_value
+
+        return wrap_operator
+
     for operator in operators:
-        setattr(
-            cls,
-            operator,
-            lambda self, *args, **kwargs: getattr(self.wrapped, operator)(
-                *args, **kwargs
-            ),
-        )
+        setattr(cls, operator, create_function(operator))
     return cls
 
 
@@ -73,10 +80,22 @@ class Variable:
     """Wraps any kind of variable and specifies how to aggregate it over the different
     processes."""
 
-    __paraloop_attributes__ = set(["wrapped", "id", "__repr__"])
+    __paraloop_attributes__ = set(["wrapped", "type", "assign", "__repr__"])
 
     def __init__(self, wrapped: Any) -> None:
         self.wrapped = wrapped
+        self.type = type(wrapped)
+
+    def assign(self, value: Any):
+        # We don't support assigning values of a different type, unless both the wrapped
+        # variable and the new value are ints or floats.
+        if not isinstance(value, self.type) and not (
+            isinstance(value, (int, float)) and self.type in (int, float)
+        ):
+            raise TypeError(
+                f"Cannot assign value of type {type(value)} to a Variable wrapping a {self.type}!"
+            )
+        self.wrapped = value
 
     def __getattribute__(self, name: str) -> Any:
         """Wrap all non-paraloop attributes automatically."""
