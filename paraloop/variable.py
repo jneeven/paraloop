@@ -65,6 +65,8 @@ def wrap_operators(cls):
             around. Normally Python takes care of this, but we need to ensure that it
             passes the wrapped variable rather than the wrapping paraloop.Variable.
             """
+            if isinstance(other, Variable):
+                other = other.wrapped
             new_value = getattr(self.wrapped, operator)(other)
             if new_value is NotImplemented:
                 new_value = getattr(other, operator)(self.wrapped)
@@ -77,7 +79,36 @@ def wrap_operators(cls):
     return cls
 
 
+# TODO: this needs to be expanded
+functions = [
+    "__getitem__",
+    "__len__",
+    "__setitem__",
+]
+
+
+def wrap_functions(cls):
+    """This decorator registers each of the functions defined in `functions` above by
+    simply forwarding the call to the `cls.wrapped` variable.
+
+    This is necessary because these functions must be registered on the class, not on
+    the instance, for some of the default functions like `len()` to work.
+    """
+
+    def create_function(function: str):
+        def wrap_function(self, *args, **kwargs):
+            """Call the function on the wrapped variable."""
+            return getattr(self.wrapped, function)(*args, **kwargs)
+
+        return wrap_function
+
+    for function in functions:
+        setattr(cls, function, create_function(function))
+    return cls
+
+
 @wrap_operators
+@wrap_functions
 class Variable:
     """Wraps any kind of variable and specifies how to aggregate it over the different
     processes."""

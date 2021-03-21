@@ -78,6 +78,10 @@ class LoopTransformer(ast.NodeTransformer):
             [key for key, value in self.scope.items() if isinstance(value, Variable)]
         )
 
+        # This is used to distinguish the loop we're trying to convert from any inner
+        # for loops that it may be wrapping.
+        self._in_nested_for = False
+
     def build_loop_function(self):
         """Creates an executable function that will be called for each iteration in the
         for-loop."""
@@ -100,7 +104,10 @@ class LoopTransformer(ast.NodeTransformer):
         """Converts the for-loop into a function with a random name."""
         # We only convert the outermost for-loop.
         if node.lineno != 1:
-            return self.generic_visit(node)
+            self._in_nested_for = True
+            node = self.generic_visit(node)
+            self._in_nested_for = False
+            return node
 
         # For now, we only support a single target.
         target = node.target
@@ -126,14 +133,14 @@ class LoopTransformer(ast.NodeTransformer):
     def visit_Assign(self, node: ast.Assign):
         if len(node.targets) > 1:
             for target in node.targets:
-                if target.id in self.variable_names:
+                if hasattr(node.target, "id") and target.id in self.variable_names:
                     raise TypeError(
                         "You cannot assign to multiple paraloop Variables in a single statement. "
                         "Try assigning one at a time."
                     )
             return self.generic_visit(node)
 
-        if node.targets[0].id in self.variable_names:
+        if hasattr(node.targets[0], "id") and node.targets[0].id in self.variable_names:
             new_node = ast.Expr(
                 ast.Call(
                     func=ast.Attribute(
@@ -148,6 +155,8 @@ class LoopTransformer(ast.NodeTransformer):
             ast.fix_missing_locations(new_node)
             return new_node
 
+        return self.generic_visit(node)
+
     def visit_AnnAssign(self, node: ast.AnnAssign):
         if node.target.id in self.variable_names:
             raise TypeError(
@@ -157,7 +166,7 @@ class LoopTransformer(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_AugAssign(self, node: ast.AugAssign):
-        if node.target.id in self.variable_names:
+        if hasattr(node.target, "id") and node.target.id in self.variable_names:
             new_node = ast.Expr(
                 ast.Call(
                     func=ast.Attribute(
@@ -177,3 +186,12 @@ class LoopTransformer(ast.NodeTransformer):
             )
             ast.fix_missing_locations(new_node)
             return new_node
+        return self.generic_visit(node)
+
+    def visit_Continue(self, node: ast.Continue):
+        if self._in_nested_for:
+            return node
+
+        new_node = ast.Return(value=ast.Constant(value=None))
+        ast.fix_missing_locations(new_node)
+        return new_node

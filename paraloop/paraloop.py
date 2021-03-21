@@ -19,7 +19,6 @@ class ParaLoop:
         self.length = length or len(iterable)
         # TODO: add auto mode where we take num cores - 1.
         self.num_processes = num_processes
-        self.index = 0
 
     def __iter__(self):
         # Find the source code of the calling loop and transform it into a function
@@ -81,9 +80,9 @@ class ParaLoop:
                 print("An error has occured in one of the workers!")
                 raise result
 
-            results.append()
+            results.append(result)
 
-        print(results)
+        # print(results)
 
         for name, variable in variables.items():
             aggregated = variable.aggregation_strategy.aggregate(
