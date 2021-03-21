@@ -22,7 +22,7 @@ def loop_iterator_2414(i):
     counter.assign(counter + 1)
 ```
 
-And will call the function once for every iteration of the loop, instead of the original loop body.
+And will call the function once for every iteration of the loop across multiple processes, instead of the original loop body.
 Once the processes have finished, `paraloop` will handle the aggregation based on the chosen [AggregationStrategy](./paraloop/aggregation_strategies.py).
 
 ## Practical example
