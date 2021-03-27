@@ -9,7 +9,7 @@ setup(
     name="paraloop",
     version="0.0.1",
     author="Jelmer Neeven",
-    author_email="jelmer@plumerai.com",
+    author_email="jelmer@neeven.tech",
     license="MIT",
     description="Simple Python for-loop parallelization",
     keywords="for loop parallel multiprocess python",
