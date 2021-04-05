@@ -133,7 +133,7 @@ class LoopTransformer(ast.NodeTransformer):
     def visit_Assign(self, node: ast.Assign):
         if len(node.targets) > 1:
             for target in node.targets:
-                if hasattr(node.target, "id") and target.id in self.variable_names:
+                if hasattr(target, "id") and target.id in self.variable_names:
                     raise TypeError(
                         "You cannot assign to multiple paraloop Variables in a single statement. "
                         "Try assigning one at a time."
@@ -158,7 +158,7 @@ class LoopTransformer(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign):
-        if node.target.id in self.variable_names:
+        if hasattr(node.target, "id") and node.target.id in self.variable_names:
             raise TypeError(
                 "Your loop contains an annotated assign to a paraloop Variable "
                 f"on line {node.lineno - 1}, that is not supported!"

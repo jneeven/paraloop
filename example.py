@@ -1,3 +1,5 @@
+# pytype: skip-file
+
 import time
 from collections import defaultdict
 
