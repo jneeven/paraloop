@@ -1,5 +1,5 @@
 # Automatically parallelizing simple python for-loops
-This is currently still in a pretty experimental stage, and I can guarantee that it is full of horrendous bugs. There are only two `AggregationStrategy` types with support for a limited set of objects for now, but the library can definitely be used. Have a look at the [aggregation strategies](./paraloop/aggregation_strategies.py) to see what is currently supported!
+This is currently still in a pretty experimental stage, and I can guarantee that it is full of horrendous bugs. There are only two `AggregationStrategy` types with support for a limited set of objects for now, but the library can definitely be used (especially for loops that don't "return" any values at all). Have a look at the [aggregation strategies](./paraloop/aggregation_strategies.py) to see what is currently supported!
 
 ## How it works
 Given a for-loop, e.g.
