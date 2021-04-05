@@ -44,3 +44,11 @@ The original loop took 18.553406238555908 seconds.
 The ParaLoop took 1.689873456954956 seconds.
 ```
 Which is of course because most of the time is spent waiting for the WikiPedia server to respond.
+
+
+## Roadmap
+- [ ] Write unit tests for the `ParaLoop` class and the loop transformer
+- [ ] Automatically determine the optimal number of processes if none was specified
+- [ ] Add an optional progress bar
+- [ ] Add a timeout in case a worker silently fails
+- [ ] Add `SharedVariable`s that are stored in shared memory and hence don't need to be aggregated at all
