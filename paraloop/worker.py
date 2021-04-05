@@ -9,6 +9,12 @@ class Finished:
 
 
 class Worker:
+    """Worker process used to execute the loop iterations assigned to it.
+
+    Inputs and results are communicated through the specified Queues. Any exceptions
+    will be passed to the master process.
+    """
+
     def __init__(
         self,
         function: Callable,

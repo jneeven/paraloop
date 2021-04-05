@@ -123,7 +123,9 @@ class Variable:
         self.aggregation_strategy = aggregation_strategy
 
         if not self.aggregation_strategy.is_compatible(self.wrapped):
-            raise TypeError()  # TODO
+            raise TypeError(
+                f"Object type {self.type} is not supported by aggregation strategy {self.aggregation_strategy}!"
+            )
 
     def assign(self, value: Any):
         # We don't support assigning values of a different type, unless both the wrapped
