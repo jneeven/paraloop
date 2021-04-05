@@ -16,9 +16,16 @@ class ParaLoop:
         self, iterable: Iterable, length: Optional[int] = None, num_processes: int = 8
     ):
         self.iterable = iter(iterable)
-        self.length = length or len(iterable)
+        self.length = length
+        if self.length is None and hasattr(iterable, "__len__"):
+            self.length = len(iterable)
         # TODO: add auto mode where we take num cores - 1.
         self.num_processes = num_processes
+        if self.num_processes < 2:
+            raise ValueError(
+                "Paraloop must use at least two worker processes! "
+                f"The current configuration specifies only {num_processes}."
+            )
 
     def __iter__(self):
         # Find the source code of the calling loop and transform it into a function

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Type
 
 from paraloop.aggregation_strategies import AggregationStrategy
 
@@ -113,17 +113,22 @@ class Variable:
     """Wraps any kind of variable and specifies how to aggregate it over the different
     processes."""
 
+    _HAS_DYNAMIC_ATTRIBUTES = True
     __paraloop_attributes__ = set(
         ["wrapped", "type", "aggregation_strategy", "assign", "__repr__"]
     )
 
-    def __init__(self, wrapped: Any, aggregation_strategy: AggregationStrategy) -> None:
+    def __init__(
+        self, wrapped: Any, aggregation_strategy: Type[AggregationStrategy]
+    ) -> None:
         self.wrapped = wrapped
         self.type = type(wrapped)
         self.aggregation_strategy = aggregation_strategy
 
         if not self.aggregation_strategy.is_compatible(self.wrapped):
-            raise TypeError()  # TODO
+            raise TypeError(
+                f"Object type {self.type} is not supported by aggregation strategy {self.aggregation_strategy}!"
+            )
 
     def assign(self, value: Any):
         # We don't support assigning values of a different type, unless both the wrapped
@@ -140,7 +145,7 @@ class Variable:
         """Wrap all non-paraloop attributes automatically."""
         if name == "__paraloop_attributes__" or name in self.__paraloop_attributes__:
             return super().__getattribute__(name)
-        return self.wrapped.__getattribute__(name)
+        return self.wrapped.__getattribute__(name)  # type:ignore
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Wrap all non-paraloop attributes automatically."""
@@ -148,7 +153,7 @@ class Variable:
             return super().__setattr__(name, value)
         if name.startswith("__"):
             raise ValueError("You probably don't want to do this!")
-        return self.wrapped.__setattr__(name, value)
+        return self.wrapped.__setattr__(name, value)  # type: ignore
 
     def __repr__(self):
         return f"paraloop.Variable({self.wrapped})"
