@@ -7,28 +7,29 @@ on:
   pull_request: {}
 
 jobs:
-  runs-on: ubuntu-latest
-  strategy:
-    matrix:
-      python-version: [3.8, 3.9]
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
 
-  steps:
-    - name: Cancel Outdated Runs
-      uses: styfle/cancel-workflow-action@0.8.0
-      with:
-        access_token: ${{ github.token }}
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2.1.4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip3-${{ hashFiles('*requirements.txt') }}
-    - name: Install dependencies
-      run: pip install -e .[dev]
-    - name: Check package version conflicts
-      run: pip check
-    - name: Run unit tests
-      run: pytest -vv tests -n auto
+    steps:
+      - name: Cancel Outdated Runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ github.token }}
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/cache@v2.1.4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip3-${{ hashFiles('*requirements.txt') }}
+      - name: Install dependencies
+        run: pip install -e .[dev]
+      - name: Check package version conflicts
+        run: pip check
+      - name: Run unit tests
+        run: pytest -vv tests -n auto
