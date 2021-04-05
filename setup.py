@@ -7,7 +7,7 @@ def requires(filename: str):
 
 setup(
     name="paraloop",
-    version="0.0.1.dev0",
+    version="0.0.1.dev1",
     author="Jelmer Neeven",
     author_email="jelmer@neeven.tech",
     license="MIT",
