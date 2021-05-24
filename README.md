@@ -48,7 +48,7 @@ Which is of course because most of the time is spent waiting for the WikiPedia s
 
 ## Roadmap
 - [ ] Write unit tests for the `ParaLoop` class and the loop transformer
-- [ ] Automatically determine the optimal number of processes if none was specified
+- [x] Automatically determine the optimal number of processes if none was specified
 - [ ] Add an optional progress bar
 - [ ] Add a timeout in case a worker silently fails
 - [ ] Add `SharedVariable`s that are stored in shared memory and hence don't need to be aggregated at all
