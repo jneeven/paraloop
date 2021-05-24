@@ -44,7 +44,7 @@ def paraloop_code():
 
     start = time.time()
     # Note that the content of the loop is identical!
-    for name in ParaLoop(wikipedia_names()):
+    for name in ParaLoop(wikipedia_names(), iteration_timeout=2):
         try:
             content = wikipedia.page(name).content
         except (
@@ -65,5 +65,5 @@ def paraloop_code():
 
 
 if __name__ == "__main__":
-    original_code()
     paraloop_code()
+    original_code()
